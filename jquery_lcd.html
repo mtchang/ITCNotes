@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>effect demo</title>
+<link rel="stylesheet" href="//code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css">
+<style>
+
+div {
+width: 1024px;
+height: 768px;
+background: #ccc;
+border: 1px solid #000;
+}
+
+
+#pic {
+	position:absolute;
+	z-index:1;
+	width: 1024px;
+	height: 768px;
+	background: #ccc;
+	border: 1px solid #000;	
+}
+#transbox {
+	position:absolute;
+  	width:900px;
+  	height: 200px;
+	z-index:1;
+	left: 10px;
+	top: 500px;
+	border:1px solid black;
+  	margin:30px 50px;
+  	background-color:#000000;	
+	opacity:0.7;
+	line-height: 1.4em;
+	letter-spacing: 0.2em;
+}  
+
+#transbox p
+  {
+  margin:10px 10px;
+  font-weight:bold;
+  color:#ffffff;
+  font-size: 20px;
+  }  
+
+#transbox h3
+  {
+  text-shadow:1px 1px #c0c0c0;
+  margin:10px 10px;
+  color:#ffffff;
+  font-size: 30px;
+  }    
+
+</style>
+
+
+<script src="//code.jquery.com/jquery-1.10.2.js"></script>
+<script src="//code.jquery.com/ui/1.10.4/jquery-ui.js"></script>
+</head>
+<body>
+
+<div id="pic">
+<img src="4.jpg" width="1024" height="768" alt="" />
+<div id="transbox">
+
+<h3>管院新進教師專訪－公事所張瓊婷老師 綠色幸福親善大使</h3>
+<p>Open door及陽光般的笑容 讓你我之間無距離一點一滴打造幸福城市的張瓊婷老師，去年剛進管理學院公共事務研究所的新任教師，時常看到她臉上掛著陽光般的笑容，親切的樣貌使她與學生之間沒有距離感。一走到老師的研究室門口就發現很特別的地方，那就是老師隨時都開著門迎接訪客，藉由這種Open door的方式，能增加學生與老師之間互動的機會.....
+</p>
+</div>
+</div>
+
+
+<script>
+$( document ).ready(function() {
+	$( "#pic" ).delay( 8000 ).effect( "slide", "slow" ,"3000" );
+	$( "#pic" ).delay( 16000 ).effect( "clip", "slow" ,"3000" );
+	$( "#pic" ).delay( 24000 ).effect( "slide", "slow" ,"3000" );
+	setTimeout(function() { 
+		location.reload(true);
+	}, 32000 );
+});
+</script>
+
+
+</body>
+</html>
