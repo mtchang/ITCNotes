@@ -1,0 +1,17 @@
+# [root@mail backup]# psql -U USERbackup -h localhost -d DB -W -l > pgsql_backup_dblist.txt
+#                                        List of databases
+#         Name          |  Owner   | Encoding |   Collate   |    Ctype    |   Access privileges   
+#-----------------------+----------+----------+-------------+-------------+-----------------------
+# dbsync                | dbsync   | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+# dbsync_tmp            | dbsync   | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+# nms                   | nms      | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+# nms_dev               | nms      | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+# nms_tmp               | nms      | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+# post                  | post     | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+# postgres              | postgres | UTF8     | en_US.UTF-8 | en_US.UTF-8 | 
+dbsync
+dbsync_tmp
+nms
+nms_dev
+nms_tmp
+post
