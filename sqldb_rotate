@@ -1,0 +1,36 @@
+START TRANSACTION;
+CREATE TABLE IF NOT EXISTS `SystemEvents_tmp` (
+  `ID` int(10) unsigned NOT NULL AUTO_INCREMENT,
+  `CustomerID` bigint(20) DEFAULT NULL,
+  `ReceivedAt` datetime DEFAULT NULL,
+  `DeviceReportedTime` datetime DEFAULT NULL,
+  `Facility` smallint(6) DEFAULT NULL,
+  `Priority` smallint(6) DEFAULT NULL,
+  `FromHost` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `Message` text COLLATE utf8mb4_unicode_ci,
+  `NTSeverity` int(11) DEFAULT NULL,
+  `Importance` int(11) DEFAULT NULL,
+  `EventSource` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `EventUser` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `EventCategory` int(11) DEFAULT NULL,
+  `EventID` int(11) DEFAULT NULL,
+  `EventBinaryData` text COLLATE utf8mb4_unicode_ci,
+  `MaxAvailable` int(11) DEFAULT NULL,
+  `CurrUsage` int(11) DEFAULT NULL,
+  `MinUsage` int(11) DEFAULT NULL,
+  `MaxUsage` int(11) DEFAULT NULL,
+  `InfoUnitID` int(11) DEFAULT NULL,
+  `SysLogTag` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `EventLogType` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `GenericFileName` varchar(60) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `SystemID` int(11) DEFAULT NULL,
+  PRIMARY KEY (`ID`),
+  KEY `Facility` (`Facility`,`Priority`,`SysLogTag`),
+  KEY `ReceivedAt` (`ReceivedAt`),
+  FULLTEXT KEY `Message` (`Message`)
+) ENGINE=MyISAM DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci AUTO_INCREMENT=1 ;
+
+RENAME TABLE  `Syslog`.`SystemEvents` TO  `Syslog`.`SystemEvents_2015052001` ;
+
+RENAME TABLE  `Syslog`.`SystemEvents_tmp` TO  `Syslog`.`SystemEvents` ;
+COMMIT;
