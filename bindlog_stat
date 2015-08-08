@@ -1,0 +1,44 @@
+[root@mail bindlog]# tail bind.log 
+Aug  9 00:21:44 mail named[22696]: 09-Aug-2015 00:21:44.890 client 140.117.68.173#60549: query: isatap.cm.nsysu.edu.tw IN A + (140.117.69.1)
+Aug  9 00:21:45 mail named[22696]: 09-Aug-2015 00:21:45.540 client 140.117.69.1#42183: query: bmath.scu.edu.tw IN MX + (140.117.69.1)
+Aug  9 00:21:45 mail named[22696]: 09-Aug-2015 00:21:45.879 lame-servers: info: error (broken trust chain) resolving 'kms.nsysu.edu.tw/A/IN': 168.95.1.1#53
+Aug  9 00:21:49 mail named[22696]: 09-Aug-2015 00:21:49.661 client 140.117.70.186#56387: query: wpad.cm.nsysu.edu.tw IN A + (140.117.69.1)
+Aug  9 00:21:50 mail named[22696]: 09-Aug-2015 00:21:50.229 client 140.117.76.33#2058: query: a.root-servers.net IN A + (140.117.69.1)
+Aug  9 00:21:50 mail named[22696]: 09-Aug-2015 00:21:50.536 lame-servers: info: error (unexpected RCODE SERVFAIL) resolving 'ecel.uwa.edu.au/MX/IN': 130.95.5.8#53
+Aug  9 00:21:50 mail named[22696]: 09-Aug-2015 00:21:50.884 lame-servers: info: error (host unreachable) resolving 'ecel.uwa.edu.au/MX/IN': 130.95.4.79#53
+Aug  9 00:21:51 mail named[22696]: 09-Aug-2015 00:21:51.853 client 61.220.8.80#31870: query: ip75206.cm.nsysu.edu.tw IN A -EDC (140.117.69.1)
+Aug  9 00:21:52 mail named[22696]: 09-Aug-2015 00:21:52.214 client 140.117.70.186#63593: query: settings-win.data.microsoft.com IN A + (140.117.69.1)
+Aug  9 00:21:54 mail named[22696]: 09-Aug-2015 00:21:54.723 client 140.117.69.1#34168: query: mg1.knu.edu.tw IN A + (140.117.69.1)
+
+[root@mail bindlog]# cat bindlog_stat.sh 
+#!/bin/bash
+echo "TODAY: $(date +%Y%m%d)"
+echo "     SN    count   domain name"
+echo "==============================="
+cat /var/log/messages | grep named > bind.log 
+cat bind.log | grep 'query' | cut -d'#' -f2 | cut -d' ' -f 3 | sort | uniq -c | sort -nr | head -n 20 | nl
+
+[root@mail bindlog]# ./bindlog_stat.sh 
+TODAY: 20150809
+     SN    count   domain name
+===============================
+     1	    497 a.root-servers.net
+     2	    227 clients4.google.com
+     3	    226 teredo.ipv6.microsoft.com
+     4	    201 tw.pikolive.com
+     5	    185 ssl.gstatic.com
+     6	    180 cloudfront-labs.amazonaws.com
+     7	    173 d31qbv1cthcecs.cloudfront.net
+     8	    172 ip74199.cm.nsysu.edu.tw
+     9	    172 d5nxst8fruw4z.cloudfront.net
+    10	    165 www.google-analytics.com
+    11	    156 www.facebook.com
+    12	    153 wpad.cm.nsysu.edu.tw
+    13	    142 vortex-win.data.microsoft.com
+    14	    141 settings-win.data.microsoft.com
+    15	    140 web.cdn.garenanow.com
+    16	    129 crl.microsoft.com
+    17	    116 finance.nsysu.edu.tw
+    18	    103 sso.nsysu.edu.tw
+    19	     89 www.microsoft.com
+    20	     81 static-cdn.jtvnw.net
