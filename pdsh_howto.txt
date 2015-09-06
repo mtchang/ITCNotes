@@ -1,11 +1,5 @@
 PDSH(Parallel Distributed SHell) 同時對遠端多台電腦送指令的 shell 工具
 
-Pdsh(Parallel Distributed Shell) is a high-performance, parallel remote shell utility. It uses a sliding window of threads to execute remote commands, conserving socket resources while allowing some connections to timeout if needed. It was originally written as a replacement for IBM's DSH on clusters at LLNL.
-
-The core functionality of pdsh is supplemented by many available dynamically loadable modules. The modules may implement a new connection protocol, target host filtering (e.g. removing hosts that are "down" from the target host list) and/or other host selection options (e.g. -a selects all hosts from a config file).
-
-The pdsh distribution also contains a parallel remote copy utility (pdcp - copy from local host to a group of remote hosts in parallel), reverse parallel remote copy (rpdcp, copy from a group of hosts to localhost in parallel), and a script dshbak for formatting and demultiplexing pdsh output.
-
 Pdsh(Parallel Distributed Shell) 是個可以同時平行對遠端的 shell 送指令及接收回傳資料的工具，它目標是取代 IBM's DSH 在 clusters at LLNL. 當有很多台一樣的主機，需要管理的時候就顯的重要。
 目前他的官方網站 https://code.google.com/p/pdsh/ 最後一次更新在 2013 年，網路上已經有人打包成為 RPM 檔案，直接使用打包好的就可以。
 它同時提供有 
@@ -123,10 +117,27 @@ hdatanode16
 192.168.1.16:  09:50:03 up 20:27,  0 users,  load average: 0.00, 0.01, 0.05
 192.168.1.14:  09:50:03 up 20:27,  0 users,  load average: 0.00, 0.01, 0.05
 
+# 同時 yum upgrade 群組 new 主機
+[hadoop@hadoop ~]$ pdsh -g new -l root 'yum upgrade -y'
+
 # 使用 dshbak 將輸出的資料整理，免得資料一多不易閱讀。
 [hadoop@hadoop ~]$ pdsh -g hadoop -l hadoop 'uptime' | dshbak -c
 ----------------
 hdatanode[1-16]
 ----------------
  10:32:50 up 21:10,  0 users,  load average: 0.00, 0.01, 0.05
- 
+
+
+# 對所有主機同時安裝 java 的範例：
+# 把檔案放在內部的一台 web server 內，直接 rpm 抓下來安裝
+[root@hmaster ~]# pdsh -g hadoop -l root 'rpm -ivh http://192.168.1.250/work/jdk-8u51-linux-x64.rpm'
+# 切換 java 為這個 oracle java
+[root@hmaster ~]# pdsh -g hadoop -l root 'alternatives --set java /usr/java/jdk1.8.0_51/jre/bin/java'
+# 檢查版本是否一樣
+[root@hmaster ~]# pdsh -g hadoop -l root 'java -version' 
+
+
+REF: 
+http://kumu-linux.github.io/blog/2013/06/19/pdsh/ 
+http://blackjack.grid.org.ua/pub/linux/rhel/7x/base/x86_64/ 
+https://code.google.com/p/pdsh/ 
