@@ -1,0 +1,132 @@
+PDSH(Parallel Distributed SHell) 同時對遠端多台電腦送指令的 shell 工具
+
+Pdsh(Parallel Distributed Shell) is a high-performance, parallel remote shell utility. It uses a sliding window of threads to execute remote commands, conserving socket resources while allowing some connections to timeout if needed. It was originally written as a replacement for IBM's DSH on clusters at LLNL.
+
+The core functionality of pdsh is supplemented by many available dynamically loadable modules. The modules may implement a new connection protocol, target host filtering (e.g. removing hosts that are "down" from the target host list) and/or other host selection options (e.g. -a selects all hosts from a config file).
+
+The pdsh distribution also contains a parallel remote copy utility (pdcp - copy from local host to a group of remote hosts in parallel), reverse parallel remote copy (rpdcp, copy from a group of hosts to localhost in parallel), and a script dshbak for formatting and demultiplexing pdsh output.
+
+Pdsh(Parallel Distributed Shell) 是個可以同時平行對遠端的 shell 送指令及接收回傳資料的工具，它目標是取代 IBM's DSH 在 clusters at LLNL. 當有很多台一樣的主機，需要管理的時候就顯的重要。
+目前他的官方網站 https://code.google.com/p/pdsh/ 最後一次更新在 2013 年，網路上已經有人打包成為 RPM 檔案，直接使用打包好的就可以。
+它同時提供有 
+pdcp (copy from local host to a group of remote hosts in parallel)
+dshbak (formatting and demultiplexing pdsh output)
+這些輔助工具。
+
+
+RHLE 7 or CENTOS 7 版本的 RPM 下載
+RPM 下載：http://blackjack.grid.org.ua/pub/linux/rhel/7x/base/x86_64/
+
+安裝需要請下載這些檔案：
+[hadoop@hadoop dl]$ rpm -qa | grep pdsh
+pdsh-2.29-2.el7.centos.x86_64
+pdsh-rcmd-exec-2.29-2.el7.centos.x86_64
+pdsh-mod-dshgroup-2.29-2.el7.centos.x86_64
+pdsh-rcmd-ssh-2.29-2.el7.centos.x86_64
+pdsh-mod-machines-2.29-2.el7.centos.x86_64
+pdsh-debuginfo-2.29-2.el7.centos.x86_64
+
+然後使用 RPM 安裝，因為軟體相依性關係，請先依序安裝下面兩個程式再裝其他的程式
+rpm -ivh pdsh-rcmd-exec-2.29-2.el7.centos.x86_64
+rpm -ivh pdsh-2.29-2.el7.centos.x86_64
+.... other
+
+# 使用前需要先設定好， ssh key 認證，你可以參考底下這篇文章設定： http://jangmt.com/wiki/index.php/Sa1-unit15#.E4.BD.BF.E7.94.A8_SSH_Key-Based_.E8.AA.8D.E8.AD.89
+
+# ssh key 認證驗證， pdsh 是以這個為基礎打包管理指令，省掉寫程式的麻煩。
+[hadoop@hadoop ~]$ ssh hadoop@192.168.1.1 uptime
+ 10:10:27 up 20:47,  0 users,  load average: 0.00, 0.01, 0.05
+
+# 裝好後看看他的 help 巴!!
+[hadoop@hadoop dl]$ pdsh -help
+Usage: pdsh [-options] command ...
+-S                return largest of remote command return values
+-h                output usage menu and quit
+-V                output version information and quit
+-q                list the option settings and quit
+-b                disable ^C status feature (batch mode)
+-d                enable extra debug information from ^C status
+-l user           execute remote commands as user 指定登入的使用者
+-t seconds        set connect timeout (default is 10 sec)
+-u seconds        set command timeout (no default)
+-f n              use fanout of n nodes
+-w host,host,...  set target node list on command line 指定主機
+-x host,host,...  set node exclusion list on command line 排除指定的主機
+-R name           set rcmd module to name
+-M name,...       select one or more misc modules to initialize first
+-N                disable hostname: labels on output lines
+-L                list info on all loaded modules and exit
+-g groupname      target hosts in dsh group "groupname" 指定群組
+-X groupname      exclude hosts in dsh group "groupname"
+-a                target all nodes
+available rcmd modules: ssh,exec (default: ssh)
+
+# 先測試一台機器，使用 hadoop 使用者， uptime 指令
+[hadoop@hadoop ~]$ pdsh -w 192.168.1.1 -l hadoop uptime
+192.168.1.1:  09:51:08 up 20:28,  0 users,  load average: 0.00, 0.01, 0.05
+
+# 測試2台機器
+[hadoop@hadoop ~]$ pdsh -w 192.168.1.1,192.168.1.2 -l hadoop uptime
+192.168.1.2:  09:51:19 up 20:28,  0 users,  load average: 0.00, 0.01, 0.05
+192.168.1.1:  09:51:19 up 20:28,  0 users,  load average: 0.00, 0.01, 0.05
+
+# 測試3台機器，排除 192.168.1.3 
+[hadoop@hadoop ~]$ pdsh -w 192.168.1.[1-3] -x 192.168.1.3 -l hadoop uptime
+192.168.1.1:  09:52:36 up 20:30,  0 users,  load average: 0.11, 0.04, 0.05
+192.168.1.2:  09:52:36 up 20:30,  0 users,  load average: 0.22, 0.10, 0.07
+
+# 測試 16 台機器，排除 192.168.1.9 ~ 192.168.1.16
+[hadoop@hadoop ~]$ pdsh -w 192.168.1.[1-16] -x 192.168.1.[9-16] -l hadoop uptime
+192.168.1.5:  09:52:52 up 20:30,  0 users,  load average: 0.02, 0.02, 0.05
+192.168.1.2:  09:52:52 up 20:30,  0 users,  load average: 0.17, 0.09, 0.07
+192.168.1.7:  09:52:52 up 20:30,  0 users,  load average: 0.00, 0.01, 0.05
+192.168.1.8:  09:52:52 up 20:30,  0 users,  load average: 0.00, 0.01, 0.05
+192.168.1.6:  09:52:52 up 20:30,  0 users,  load average: 0.00, 0.01, 0.05
+192.168.1.4:  09:52:52 up 20:30,  0 users,  load average: 0.04, 0.04, 0.05
+192.168.1.1:  09:52:52 up 20:30,  0 users,  load average: 0.08, 0.04, 0.05
+192.168.1.3:  09:52:52 up 20:30,  0 users,  load average: 0.00, 0.01, 0.05
+
+# 設定群組，在使用者的目錄下建立 ~/.dsh/group/ 目錄，內的每個檔案寫入主機名稱就可以分群組。
+[hadoop@hadoop group]$ pwd
+/home/hadoop/.dsh/group
+
+# 建立 new 群組
+[hadoop@hadoop group]$ cat new 
+192.168.1.13
+192.168.1.14
+192.168.1.15
+192.168.1.16
+
+# 建立 hadoop 群組
+[hadoop@hadoop ~]$ cat .dsh/group/hadoop 
+hdatanode1
+hdatanode2
+hdatanode3
+hdatanode4
+hdatanode5
+hdatanode6
+hdatanode7
+hdatanode8
+hdatanode9
+hdatanode10
+hdatanode11
+hdatanode12
+hdatanode13
+hdatanode14
+hdatanode15
+hdatanode16
+
+# 使用 new 群組下指令
+[hadoop@hadoop group]$ pdsh -g new -l hadoop 'uptime'
+192.168.1.15:  09:50:03 up 20:27,  0 users,  load average: 0.00, 0.01, 0.05
+192.168.1.13:  09:50:03 up 20:27,  0 users,  load average: 0.02, 0.02, 0.05
+192.168.1.16:  09:50:03 up 20:27,  0 users,  load average: 0.00, 0.01, 0.05
+192.168.1.14:  09:50:03 up 20:27,  0 users,  load average: 0.00, 0.01, 0.05
+
+# 使用 dshbak 將輸出的資料整理，免得資料一多不易閱讀。
+[hadoop@hadoop ~]$ pdsh -g hadoop -l hadoop 'uptime' | dshbak -c
+----------------
+hdatanode[1-16]
+----------------
+ 10:32:50 up 21:10,  0 users,  load average: 0.00, 0.01, 0.05
+ 
