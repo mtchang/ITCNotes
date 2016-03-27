@@ -1,0 +1,137 @@
+mysql 中文亂碼的避免及 php mysql pdo 宣告取用方式
+
+mariadb 和 mysql 都會有亂碼, 只要它預設編碼還是在 latin 的時還是一直會發生.
+
+所以改成 utf8 編碼是一個對於東亞語系的文字，會比較方便。
+UTF8 的介紹請看 wiki https://zh.wikipedia.org/wiki/UTF-8
+
+xxx_bin (區分大小寫)
+xxx_general_ci (不區分大小寫)
+
+Collation 每個字符集的排序規則
+
+http://dev.mysql.com/doc/refman/5.0/en/charset-unicode-sets.html
+再 mysql 資料庫中有兩個編碼系統 UCS2 及 UTF8
+utf8 使用 1~3 bytes ，帶有 65536 個組合的編碼
+utf32 與 utf8mb4 是完整的的 unicode ，差異在 utf32 固定 4 bytes ，而 utf8mb4 則是彈性使用 1~4 bytes 。
+utf8mb4 從 MySQL 5.5.3 (released March 2010). 開始提供
+
+目前預設的編碼系統為
+xxx_general_ci (default)
+
+為了中文語系使用不要出問題，建議修正如下：
+
+# 修正 mysql 的設定檔
+[root@c7 my.cnf.d]# more /etc/my.cnf.d/my-huge.cnf 
+[client]
+default-character-set=utf8mb4
+
+[code]
+default-character-set=utf8mb4
+
+[mysqld]
+character-set-server=utf8mb4
+collation-server=utf8mb4_general_ci
+
+# restart mysql service
+
+
+# 檢查系統的編碼變數
+[root@c7 my.cnf.d]# mysql -u root -p
+Enter password: 
+MariaDB [(none)]> SHOW VARIABLES WHERE Variable_name LIKE 'character\_set\_%' OR Variable_name LIKE 'collation%';
++--------------------------+--------------------+
+| Variable_name            | Value              |
++--------------------------+--------------------+
+| character_set_client     | utf8mb4            |
+| character_set_connection | utf8mb4            |
+| character_set_database   | utf8mb4            |
+| character_set_filesystem | binary             |
+| character_set_results    | utf8mb4            |
+| character_set_server     | utf8mb4            |
+| character_set_system     | utf8               |
+| collation_connection     | utf8mb4_general_ci |
+| collation_database       | utf8mb4_general_ci |
+| collation_server         | utf8mb4_general_ci |
++--------------------------+--------------------+
+10 rows in set (0.00 sec)
+
+character_set_filesystem 就是要維持 binary
+character_set_system 是唯讀變數
+
+
+# 配合 PHP 程式上我會宣告如下，寫用一個 function 來取用 mysql 。
+
+// -----------------------------------------------------------------------------------------
+// 請在根目錄下建立一個檔案 VERSION.txt 檔案內容放置 release or developer , 依據此變數自動判斷目前所在開發環境
+$system_mode = file_get_contents("VERSION.txt");
+//$system_mode = 'release';
+//$system_mode = 'developer';
+if($system_mode == 'developer') {
+	// sql DB infomation -- for developer
+	$dbhost		='localhost';
+	$dbname		='exampleDB';
+	$dbuser		='exampleUSER';
+	$dbpassword	='example';
+}elseif($system_mode == 'release') {
+	// sql DB infomation -- for release
+	$dbhost		='localhost';
+	$dbname		='exampleDB';
+	$dbuser		='exampleUSER';
+	$dbpassword	='example';
+}else{
+	// 沒有設定 STOP
+	die('System mode set error !!!');
+}
+// ----------------------------------------------------------------------
+//
+// 連接資料庫的的設定,預設將 set name utf8 開啟
+//
+try {
+	// 在 PDO 宣告的時候就要將編碼一併宣告。 ref.pdo-mysql.connection
+	global $dbh;
+	$dsn = "mysql:host=$dbhost;dbname=$dbname";
+	$options = array(PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES utf8mb4'); 
+	$dbh = new PDO($dsn, $dbuser, $dbpassword, $options);
+} catch (PDOException $e) {
+    print "DB connect Error!: " . $e->getMessage() . "<br/>";
+    die();
+}
+
+// ---------------------------------------------------------------------
+// run SQL command then return $result
+// $result[0] --> 資料數量, 如果為 0 表示沒有變動的列
+// $result[1] ~ $result[n] --> 資料內容，從第一筆開始
+// 使用方式 example:
+// $result = runSQL($sql);
+// var_dump($result);
+// ---------------------------------------------------------------------
+function runSQL($query)
+{
+	global $dbh;
+	try {
+	$stmt = $dbh->prepare("$query");
+	$stmt->execute();
+	// 查詢到的數量, 放到此變數的 [0] 索引位置
+	$db_dump_result_all[0] = $stmt->rowCount();
+	$i=1;
+	// 以物件方式存變數物件取用以 $result->var 方式取用
+	while ($db_dump_result = $stmt->fetch(PDO::FETCH_OBJ))  {
+		$db_dump_result_all[$i] = $db_dump_result;
+		$i++;
+		}
+	} catch (PDOException $e) {
+        return("DB connect Error!: $e->getMessage() , SQL: $query ");
+        die();
+	}
+	return($db_dump_result_all);
+}
+// --------------------------------------------------------------------
+
+
+REF: 
+How to support full Unicode in MySQL databases https://mathiasbynens.be/notes/mysql-utf8mb4
+utf8mb4 編碼使用的一些紀錄 https://twpug.net/discussion/8646/utf8mb4-%E7%B7%A8%E7%A2%BC%E4%BD%BF%E7%94%A8%E7%9A%84%E4%B8%80%E4%BA%9B%E7%B4%80%E9%8C%84
+stackoverflow about utf8mb4  http://stackoverflow.com/tags/utf8mb4/info
+維基百科 utf8 http://zh.wikipedia.org/wiki/UTF-8 
+解釋 mysql 的 Unicode Character Sets http://dev.mysql.com/doc/refman/5.7/en/charset-unicode.html
