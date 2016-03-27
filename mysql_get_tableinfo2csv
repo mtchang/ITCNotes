@@ -1,0 +1,55 @@
+取得 mysql 資料表中的「欄位名稱」以及「欄位註解」
+
+在 MySQL 資料庫中，宣告資料表的過程，可以一併把欄位名稱寫在 COMMENT 選項中，如果在程式可以把這個 COMMENT 也抓出來配合欄位的名稱，可以產生自動把整個表 DUMP 出來成為一個 CSV 不就很方便。
+
+
+$table='表格名稱';
+
+// 資料庫中表的欄位抬頭資訊
+$col_sql = "SELECT COLUMN_NAME,COLUMN_COMMENT FROM INFORMATION_SCHEMA.COLUMNS WHERE table_name = '$table';";
+$col = runSQL($col_sql);
+// var_dump($col);
+
+// 資料欄位
+$sql = "SELECT * FROM `$table` WHERE 1;";
+$row = runSQL($sql);
+// var_dump($row);
+
+$csv = '';
+
+// 欄位名註解
+//echo "<hr>";
+for($i=1;$i<$col[0];$i++){
+	//echo $col[$i]->COLUMN_COMMENT.", "; 
+	$csv = $csv.$col[$i]->COLUMN_COMMENT.", ";
+}
+$csv = $csv."\n";
+
+// 欄位名稱
+//echo "<hr>";
+for($i=1;$i<$col[0];$i++){
+	//echo $col[$i]->COLUMN_NAME.", "; 
+	$csv = $csv.$col[$i]->COLUMN_NAME.", ";
+}
+$csv = $csv."\n";
+
+// 資料列取得欄位
+//echo "<hr>";
+for($j=1;$j<$row[0];$j++){
+	for($i=1;$i<$col[0];$i++){
+		$k = $col[$i]->COLUMN_NAME;
+		//echo $row[$j]->$k.', ';
+		$csv = $csv.$row[$j]->$k.', ';
+	}
+	$csv = $csv."\n";
+	//echo "<br>";
+}
+
+//echo "<hr>";
+//echo "<p> 共有 $i 欄  $j 列 </p>";
+$csv = $csv."\n 共有 $i 欄  $j 列 \n";
+
+echo nl2br($csv);
+// -----------------------------------------------
+
+* runSQL() 函式請參考這一篇 http://blog.jangmt.com/2016/03/mysql-php-mysql-pdo.html
