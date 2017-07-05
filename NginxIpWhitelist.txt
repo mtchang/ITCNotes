@@ -1,0 +1,48 @@
+Nginx Ip Whitelist
+
+# 白名單設定方式可以參考 stackoverflow 這一篇
+https://stackoverflow.com/questions/13917866/nginx-ip-whitelist
+
+# 中文可以參考這一篇
+https://www.centos.bz/question/nginx-ip-whitelist/
+
+
+想把白名單快速轉成 nginx 使用的清單, 但是又不想寫太多程式。
+所以直接用 google spreadsheets 轉成 csv 功能
+透過 linux shell script 轉換成為 nginx 可以使用的清單
+
+在實際工作動作：
+客服人員：編輯 spreadsheets 檔案
+系統人員：白名單轉成檔案驗證，並 reload nginx 生效.
+
+## ----------------------------------------------------
+#!/bin/bash
+# 編輯網址 , google doc 權限設定控制
+# 將 google doc 白名單取出成為 csv
+URL="https://docs.google.com/spreadsheets/d/{請改成你的網址}/pub?gid=0&single=true&output=csv"
+echo "w3m -dump '${URL}' > whitelist.csv" | sh
+
+# 備份原本的白名單
+mv -f customer_ip customer_ip.bak
+echo "# $(date -R) update." > customer_ip
+# 去除註解
+grep -v '#' "whitelist.csv" > tmp_file
+# 取行數
+max=$(wc -l tmp_file  | cut -f1 -d" ")
+for i in `seq 1 $max`
+do
+    line=$(awk "NR==${i}" tmp_file)
+    action=$(echo $line | cut -d, -f1)
+    cidr=$(echo $line | cut -d, -f2)
+    echo "${action} ${cidr};" >> customer_ip
+done
+rm -f tmp_file
+#rm -f whitelist.csv
+
+# nginx 重新啟動
+# run in /etc/nginx/conf.d
+echo "restart NGINX service"
+systemctl reload nginx
+# return
+echo "OK! Done. csv URL in ${URL} ";
+## ----------------------------------------------------
