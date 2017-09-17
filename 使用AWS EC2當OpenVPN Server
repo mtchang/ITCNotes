@@ -1,0 +1,137 @@
+使用AWS EC2當OpenVPN Server
+
+* 透過 AWS 設定 OpenVPN server
+* 先看一下 EC2 價格 https://aws.amazon.com/tw/ec2/pricing/
+
+* 首先去申請一台乾淨的 AWS EC2 server , 新使用者可以免費使用 750HR .
+
+* 可以參考網路上的教學文章，把 OpenVPN 安裝設定好。
+* How to Setup and Configure an OpenVPN Server on CentOS 6
+https://www.digitalocean.com/community/tutorials/how-to-setup-and-configure-an-openvpn-server-on-centos-6
+
+* 在 CentOS 6 架設 OpenVPN Server
+http://jamyy.us.to/blog/2013/09/5220.html
+
+* How To Set Up an OpenVPN Server on Ubuntu 16.04
+https://www.digitalocean.com/community/tutorials/how-to-set-up-an-openvpn-server-on-ubuntu-16-04
+
+* 本人推薦官方的說明, 比較準確 
+https://help.ubuntu.com/lts/serverguide/openvpn.html
+
+* 將設定檔及憑證全部設定在設定檔內 , 因為手機 IPHONE 才可安裝
+https://community.openvpn.net/openvpn/wiki/IOSinline
+
+* 設定主機的 NAT 轉換 IP , 讓 IP 有可以出去。
+root@ip-172-31-10-225:~# cat fire.sh 
+# --------------------------------------------------------------
+#!/bin/bash
+# linux firewall rule sample
+EXTIF="eth0"              	# 這個是可以連上 Public IP 的網路介面
+INNET="192.168.20.0/24"
+export EXTIF INNET 
+
+# cleaner rule and set default
+iptables -F
+iptables -X
+iptables -Z
+iptables -P INPUT   ACCEPT
+iptables -P OUTPUT  ACCEPT
+iptables -P FORWARD ACCEPT
+
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+# clean NAT table rule
+iptables -F -t nat
+iptables -X -t nat
+iptables -Z -t nat
+iptables -t nat -P PREROUTING  ACCEPT
+iptables -t nat -P POSTROUTING ACCEPT
+iptables -t nat -P OUTPUT      ACCEPT
+
+# nat
+iptables -t nat -A POSTROUTING -s $INNET -o $EXTIF -j MASQUERADE
+iptables -A FORWARD -p tcp -m tcp --tcp-flags SYN,RST SYN -m tcpmss --mss 1300:1536 -j TCPMSS --clamp-mss-to-pmtu
+# --------------------------------------------------------------
+
+* 設定好的這台主機, 可以跟 AWS 租用固定IP ，也可以使用 IP2DNS 寫入成為 DNS 
+* awsopenvpn.jangmt.com 這個是我的例子用的 domain name
+* AWS 的設定請參考網路上的教學文件, 無法在這裡簡單的說明。
+
+# OpenVPN 設定檔 server.conf
+# --------------------------------------------------------------
+root@ip-172-31-10-225:/etc/openvpn# grep -v "#" server.conf | grep -v '^$'| grep -v ';' 
+port 443
+proto tcp
+dev tun
+ca ca.crt
+cert server.crt
+dh dh2048.pem
+server 192.168.20.0 255.255.255.0
+ifconfig-pool-persist ipp.txt
+push "redirect-gateway def1 bypass-dhcp"
+push "dhcp-option DNS 8.8.8.8"
+keepalive 10 120
+tls-auth ta.key 0
+comp-lzo
+user nobody
+group nogroup
+persist-key
+persist-tun
+status openvpn-status.log
+verb 3
+mode server
+tls-server
+# --------------------------------------------------------------
+
+
+
+# OpenVPN Client 端的 inline 設定檔案, IPHONE 可以使用
+# --------------------------------------------------------------
+# 參考： https://community.openvpn.net/openvpn/wiki/IOSinline
+client
+dev tun
+remote awsopenvpn.jangmt.com 443
+proto tcp
+resolv-retry infinite
+nobind
+comp-lzo
+mute 3
+persist-key
+persist-tun
+ns-cert-type server
+verb 3
+#tls-client
+#tls-auth ta.key 1
+key-direction 1
+<ca>
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+</ca>
+<cert>
+-----BEGIN CERTIFICATE-----
+...
+-----END CERTIFICATE-----
+</cert>
+<key>
+-----BEGIN RSA PRIVATE KEY-----
+...
+-----END RSA PRIVATE KEY-----
+</key>
+<tls-auth>
+-----BEGIN OpenVPN Static key V1-----
+...
+-----END OpenVPN Static key V1-----
+</tls-auth>
+# --------------------------------------------------------------
+
+* 使用 OpenVPN 最大的原因是 Iphone , MAC OS 新版的有支援, 且用了一陣子後，發現還滿好用的。
+
+* OpenVPN 客戶端工具
+https://openvpn.net/index.php/open-source/downloads.html
+
+* Iphone OpenVPN
+https://itunes.apple.com/tw/app/openvpn-connect/id590379981?mt=8
+
+
