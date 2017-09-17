@@ -1,0 +1,30 @@
+NGINX的status狀態
+
+# 在 nginx config server 段加入
+
+location /nginx_status {
+	 # Turn on stats
+	 stub_status on;
+	 # only allow access from 192.168.1.5 #
+	 allow 192.168.211.112;
+	 deny all;
+}
+
+
+
+
+* Active connections 1: 
+目前連線數，包含 Waiting 量
+* server accepts handled requests 20 20 12 
+第1個值是伺服器接受的連線數
+第2個值是伺服器已經處理的連線數
+第3個值則是伺服器已經處理的請求數
+若將第3個數值除以第2個數值，就會得到平均每個連線的請求數
+* Reading  正在讀取的請求數
+* Writing  正在讀取主體、處理與回應的請求數
+* Waiting  keep-alive 的連線數這個值跟 keepalive_timeout 有關
+
+
+REF:
+https://www.cyberciti.biz/faq/nginx-see-active-connections-connections-per-seconds/
+https://blog.gtwang.org/linux/nginx-enable-stub_status-module-to-collect-metrics/
